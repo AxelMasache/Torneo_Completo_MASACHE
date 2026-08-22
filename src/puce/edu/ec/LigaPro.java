@@ -1,72 +1,91 @@
 package puce.edu.ec;
 
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Stack;
+
 public class LigaPro {
     public static void main(String[] args) {
-        /**
-         * 0 = LDU
-         * 1 = BSC
-         * 2 = DQuito
-         */
-
         String[] equipos = {"LDU", "BSC", "DQuito"};
         int totalEquipos = equipos.length;
 
-        // Matriz de resultados (1 si jugaron, 0 si no)
-        int[][] partidosJugados = new int[totalEquipos][totalEquipos];
+        // Matriz de adyacencia (1 si hay conexión/partido, 0 si no)
+        int[][] matrizAdyacencia = new int[totalEquipos][totalEquipos];
 
-        /* Definimos algunos enfrentamientos y resultados simulados */
-        // LDU (0) vs BSC (1): LDU gana
-        partidosJugados[0][1] = 3; // Goles o puntos directos de LDU contra BSC
-        partidosJugados[1][0] = 0; // BSC contra LDU
+        /* Definimos las conexiones (quién jugó contra quién) */
+        // LDU (0) <-> BSC (1)
+        matrizAdyacencia[0][1] = 1;
+        matrizAdyacencia[1][0] = 1;
 
-        // LDU (0) vs DQuito (2): Empate
-        partidosJugados[0][2] = 1;
-        partidosJugados[2][0] = 1;
+        // LDU (0) <-> DQuito (2)
+        matrizAdyacencia[0][2] = 1;
+        matrizAdyacencia[2][0] = 1;
 
-        // BSC (1) vs DQuito (2): BSC gana
-        partidosJugados[1][2] = 3;
-        partidosJugados[2][1] = 0;
+        // BSC (1) <-> DQuito (2) -> Agregamos esta conexión para formar un grafo completo
+        matrizAdyacencia[1][2] = 1;
+        matrizAdyacencia[2][1] = 1;
 
-        // Arreglos para la tabla de posiciones: [Puntos, Partidos Jugados, Ganados, Perdidos, Empatados]
-        int[] puntos = new int[totalEquipos];
-        int[] jugados = new int[totalEquipos];
-        int[] ganados = new int[totalEquipos];
-        int[] perdidos = new int[totalEquipos];
-        int[] empatados = new int[totalEquipos];
+        System.out.println("=========================================");
+        System.out.println("       RECORRIDOS EN EL GRAFO (LIGA)     ");
+        System.out.println("=========================================");
 
-        // Procesar la lógica del torneo recorriendo la matriz
-        for (int i = 0; i < totalEquipos; i++) {
-            for (int j = 0; j < totalEquipos; j++) {
-                if (i != j && partidosJugados[i][j] > 0) {
-                    jugados[i]++;
-                    if (partidosJugados[i][j] == 3) {
-                        ganados[i]++;
-                        puntos[i] += 3;
-                    } else if (partidosJugados[i][j] == 1) {
-                        empatados[i]++;
-                        puntos[i] += 1;
-                    } else {
-                        perdidos[i]++;
+        // Ejecutar DFS desde LDU (Nodo 0)
+        System.out.print("Recorrido DFS (Profundidad) desde LDU: ");
+        dfs(matrizAdyacencia, equipos, 0);
+        System.out.println();
+
+        // Ejecutar BFS desde LDU (Nodo 0)
+        System.out.print("Recorrido BFS (Anchura) desde LDU:     ");
+        bfs(matrizAdyacencia, equipos, 0);
+        System.out.println();
+        System.out.println("=========================================");
+    }
+
+    // Algoritmo DFS (Depth-First Search) usando una Pila (Stack)
+    public static void dfs(int[][] grafo, String[] equipos, int inicio) {
+        int n = grafo.length;
+        boolean[] visitados = new boolean[n];
+        Stack<Integer> pila = new Stack<>();
+
+        pila.push(inicio);
+
+        while (!pila.isEmpty()) {
+            int actual = pila.pop();
+
+            if (!visitados[actual]) {
+                visitados[actual] = true;
+                System.out.print(equipos[actual] + " ");
+
+                // Recorremos en orden inverso para que la pila procese lógicamente de izquierda a derecha
+                for (int i = n - 1; i >= 0; i--) {
+                    if (grafo[actual][i] == 1 && !visitados[i]) {
+                        pila.push(i);
                     }
                 }
             }
         }
+    }
 
-        // Mostrar la Tabla de Posiciones
-        System.out.println("=========================================");
-        System.out.println("          TABLA DE POSICIONES LIGAPRO    ");
-        System.out.println("=========================================");
-        System.out.println("Equipo\tPJ\tPG\tPE\tPP\tPTS");
-        System.out.println("-----------------------------------------");
+    // Algoritmo BFS (Breadth-First Search) usando una Cola (Queue)
+    public static void bfs(int[][] grafo, String[] equipos, int inicio) {
+        int n = grafo.length;
+        boolean[] visitados = new boolean[n];
+        Queue<Integer> cola = new LinkedList<>();
 
-        for (int i = 0; i < totalEquipos; i++) {
-            System.out.println(equipos[i] + "\t" +
-                    jugados[i] + "\t" +
-                    ganados[i] + "\t" +
-                    empatados[i] + "\t" +
-                    perdidos[i] + "\t" +
-                    puntos[i]);
+        visitados[inicio] = true;
+        cola.add(inicio);
+
+        while (!cola.isEmpty()) {
+            int actual = cola.poll();
+            System.out.print(equipos[actual] + " ");
+
+            // Buscamos todos los vecinos no visitados
+            for (int i = 0; i < n; i++) {
+                if (grafo[actual][i] == 1 && !visitados[i]) {
+                    visitados[i] = true;
+                    cola.add(i);
+                }
+            }
         }
-        System.out.println("=========================================");
     }
 }
